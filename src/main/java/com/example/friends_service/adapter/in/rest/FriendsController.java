@@ -5,10 +5,7 @@ import com.example.friends_service.entity.request.FriendData;
 import com.example.friends_service.port.in.FriendPort;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 @RestController
@@ -31,5 +28,10 @@ public class FriendsController {
         return friendsPort.isFriends(friendsIdsMono).flatMap(ConvertToJSON::convert);
     }
 
+
+    @GetMapping("/isFriends")
+    public Mono<ResponseEntity<String>> isFriends2(@RequestParam("friendFirstId") @Valid Long idFirstFriend, @RequestParam("friendSecondId") @Valid Long idSecondFriend) {
+        return friendsPort.isFriends(Mono.just(new FriendData(idFirstFriend,idSecondFriend))).flatMap(ConvertToJSON::convert);
+    }
 
 }
