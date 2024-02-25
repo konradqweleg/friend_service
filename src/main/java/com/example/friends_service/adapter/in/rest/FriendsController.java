@@ -23,14 +23,8 @@ public class FriendsController {
         return friendsPort.createFriends(friendsIdsMono).flatMap(ConvertToJSON::convert);
     }
 
-    @PostMapping("/isFriends")
-    public Mono<ResponseEntity<String>> isFriends(@RequestBody @Valid Mono<FriendData> friendsIdsMono) {
-        return friendsPort.isFriends(friendsIdsMono).flatMap(ConvertToJSON::convert);
-    }
-
-
     @GetMapping("/isFriends")
-    public Mono<ResponseEntity<String>> isFriends2(@RequestParam("friendFirstId") @Valid Long idFirstFriend, @RequestParam("friendSecondId") @Valid Long idSecondFriend) {
+    public Mono<ResponseEntity<String>> isFriends(@RequestParam("friendFirstId") @Valid Long idFirstFriend, @RequestParam("friendSecondId") @Valid Long idSecondFriend) {
         return friendsPort.isFriends(Mono.just(new FriendData(idFirstFriend,idSecondFriend))).flatMap(ConvertToJSON::convert);
     }
 
