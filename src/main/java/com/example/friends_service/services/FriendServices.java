@@ -1,6 +1,8 @@
 package com.example.friends_service.services;
 
-import com.example.friends_service.entity.request.FriendData;
+import com.example.friends_service.entity.request.FriendIdData;
+import com.example.friends_service.entity.request.FriendsIdsData;
+import com.example.friends_service.entity.request.IdUser;
 import com.example.friends_service.entity.request.IdUserData;
 import com.example.friends_service.entity.response.IsFriends;
 import com.example.friends_service.entity.response.Result;
@@ -11,6 +13,7 @@ import com.example.friends_service.port.in.FriendPort;
 import com.example.friends_service.port.in.UserServicePort;
 import com.example.friends_service.port.out.persistence.FriendsDatabasePort;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
@@ -28,26 +31,28 @@ public class FriendServices implements FriendPort {
     private String USER_NOT_FOUND = "User not found";
 
     @Override
-    public Mono<Result<Status>> createFriends(Mono<FriendData> friendsIdsMono) {
+    public Mono<Result<Status>> createFriends(Mono<FriendsIdsData> friendsIdsMono) {
+
         return
 
-                friendsIdsMono.flatMap(friendData ->
-                        userServicePort.getUserAboutId(Mono.just(new IdUserData(friendData.idFirstFriend())))
-                                .flatMap(userFirst -> userServicePort.getUserAboutId(Mono.just(new IdUserData(friendData.idSecondFriend())))
+                friendsIdsMono.flatMap(friendsIdsData ->
+                        userServicePort.getUserAboutId(Mono.just(new IdUserData(friendsIdsData.idFirstFriend())))
+                                .flatMap(userFirst -> userServicePort.getUserAboutId(Mono.just(new IdUserData(friendsIdsData.idSecondFriend())))
                                         .flatMap(userSecond -> {
+
                                             if (userFirst.isSuccess() && userSecond.isSuccess()) {
-                                                return friendsDatabasePort.findFriendsByIds(new Friend(null, friendData.idFirstFriend(), friendData.idSecondFriend()))
+                                                return friendsDatabasePort.findFriendsByIds(new Friend(null, friendsIdsData.idFirstFriend(), friendsIdsData.idSecondFriend()))
                                                         .flatMap(foundFriendData -> {
                                                             if (foundFriendData != null) {
                                                                 return Mono.just(Result.<Status>error("Friend already exists"));
                                                             } else {
 
-                                                                return friendsDatabasePort.createFriend(new Friend(null, friendData.idFirstFriend(), friendData.idSecondFriend()))
+                                                                return friendsDatabasePort.createFriend(new Friend(null, friendsIdsData.idFirstFriend(), friendsIdsData.idSecondFriend()))
                                                                         .thenReturn(Result.success(new Status(true)));
                                                             }
                                                         })
                                                         .switchIfEmpty(
-                                                                friendsDatabasePort.createFriend(new Friend(null, friendData.idFirstFriend(), friendData.idSecondFriend()))
+                                                                friendsDatabasePort.createFriend(new Friend(null, friendsIdsData.idFirstFriend(), friendsIdsData.idSecondFriend()))
                                                                         .thenReturn(Result.success(new Status(true)))
                                                         )
                                                         .onErrorResume(throwable -> Mono.just(Result.error(throwable.getMessage())));
@@ -63,12 +68,29 @@ public class FriendServices implements FriendPort {
     }
 
     @Override
-    public Mono<Result<IsFriends>> isFriends(Mono<FriendData> friendsIdsMono) {
+    public Mono<Result<IsFriends>> isFriends(Mono<FriendsIdsData> friendsIdsMono) {
         return friendsIdsMono
-                .flatMap(friendData -> friendsDatabasePort.findFriendsByIds(new Friend(null, friendData.idFirstFriend(), friendData.idSecondFriend()))
+                .flatMap(friendsIdsData -> friendsDatabasePort.findFriendsByIds(new Friend(null, friendsIdsData.idFirstFriend(), friendsIdsData.idSecondFriend()))
                         .map(friend -> new IsFriends(true))
                         .defaultIfEmpty(new IsFriends(false))
                         .map(Result::success))
                 .onErrorResume(throwable -> Mono.just(Result.error(throwable.getMessage())));
+    }
+
+    @Override
+    public Flux<FriendIdData> getFriends(Mono<IdUser> idUserMono) {
+        return idUserMono
+                .flatMapMany(idUser -> friendsDatabasePort.findFriendsUser(idUser.idUser())
+                        .flatMap(friend -> {
+                            if (friend.idFirstFriend().equals(idUser.idUser())) {
+                                return userServicePort.getUserAboutId(Mono.just(new IdUserData(friend.idSecondFriend())))
+                                        .map(user -> new FriendIdData(friend.idSecondFriend()));
+                            } else {
+                                return userServicePort.getUserAboutId(Mono.just(new IdUserData(friend.idFirstFriend())))
+                                        .map(user -> new FriendIdData(friend.idFirstFriend()));
+                            }
+                        })
+                )
+                .onErrorResume(throwable -> Flux.empty());
     }
 }
