@@ -1,4 +1,4 @@
-DROP SCHEMA IF EXISTS friends_schema CASCADE;
+-- DROP SCHEMA IF EXISTS friends_schema CASCADE;
 CREATE SCHEMA IF NOT EXISTS friends_schema;
 
 CREATE TABLE IF NOT EXISTS friends_schema.friends (   id_friends SERIAL PRIMARY KEY,
