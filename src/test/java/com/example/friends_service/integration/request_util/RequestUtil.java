@@ -16,12 +16,12 @@ public class RequestUtil {
         return new URI(prefixHttp + serverPort + prefixServicesApiV1 + "/createFriends");
     }
 
-    public URI createRequestIsFriends() throws URISyntaxException {
-        return new URI(prefixHttp + serverPort + prefixServicesApiV1 + "/isFriends");
+    public URI createRequestIsFriends(Long idFirstFriends, Long idSecondFriends) throws URISyntaxException {
+        return new URI(prefixHttp + serverPort + prefixServicesApiV1 + "/isFriends?friendFirstId="+idFirstFriends+"&friendSecondId="+idSecondFriends);
     }
 
-    public URI createRequestGetFriends() throws URISyntaxException {
-        return new URI(prefixHttp + serverPort + prefixServicesApiV1 + "/getFriends/idUser=");
+    public URI createRequestGetFriends(Long idUser) throws URISyntaxException {
+        return new URI(prefixHttp + serverPort + prefixServicesApiV1 + "/getFriends?idUser="+idUser);
     }
 
 
