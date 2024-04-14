@@ -1,9 +1,6 @@
 package com.example.friends_service.services;
 
-import com.example.friends_service.entity.request.FriendIdData;
-import com.example.friends_service.entity.request.FriendsIdsData;
-import com.example.friends_service.entity.request.IdUser;
-import com.example.friends_service.entity.request.IdUserData;
+import com.example.friends_service.entity.request.*;
 import com.example.friends_service.entity.response.IsFriends;
 import com.example.friends_service.entity.response.Result;
 import com.example.friends_service.entity.response.Status;
@@ -78,16 +75,16 @@ public class FriendServices implements FriendPort {
     }
 
     @Override
-    public Flux<FriendIdData> getFriends(Mono<IdUser> idUserMono) {
+    public Flux<UserData> getFriends(Mono<IdUser> idUserMono) {
         return idUserMono
                 .flatMapMany(idUser -> friendsDatabasePort.findFriendsUser(idUser.idUser())
                         .flatMap(friend -> {
                             if (friend.idFirstFriend().equals(idUser.idUser())) {
                                 return userServicePort.getUserAboutId(Mono.just(new IdUserData(friend.idSecondFriend())))
-                                        .map(user -> new FriendIdData(friend.idSecondFriend()));
+                                        .map(user -> new UserData(friend.idSecondFriend(),user.getValue().name(),user.getValue().surname(),user.getValue().email() ));
                             } else {
                                 return userServicePort.getUserAboutId(Mono.just(new IdUserData(friend.idFirstFriend())))
-                                        .map(user -> new FriendIdData(friend.idFirstFriend()));
+                                        .map(user -> new UserData(friend.idFirstFriend(),user.getValue().name(),user.getValue().surname(),user.getValue().email()));
                             }
                         })
                 )
