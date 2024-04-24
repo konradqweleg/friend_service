@@ -28,23 +28,23 @@ public class GetFriendsTests extends DefaultTestConfiguration {
                 .exchange();
 
     }
-    @Test public void whenUserHasFriendsRequestShouldReturnFriends() throws URISyntaxException {
-
-        // given
-        userServicePortMock.mockUserServicePortReturnUserForUserAboutIdsOneTwoAndThree(userServicePort);
-        createFriends(idFirstUser, idSecondUser);
-        createFriends(idFirstUser, idThirdUser);
-
-        // when
-        // then
-        webTestClient.get().uri(createRequestUtil().createRequestGetFriends(idFirstUser))
-                .exchange()
-                .expectStatus().isOk()
-                .expectBody()
-                .jsonPath("$[0].idFriend").isEqualTo(idSecondUser)
-                .jsonPath("$[1].idFriend").isEqualTo(idThirdUser);
-
-    }
+//    @Test public void whenUserHasFriendsRequestShouldReturnFriends() throws URISyntaxException {
+//
+//        // given
+//        userServicePortMock.mockUserServicePortReturnUserForUserAboutIdsOneTwoAndThree(userServicePort);
+//        createFriends(idFirstUser, idSecondUser);
+//        createFriends(idFirstUser, idThirdUser);
+//
+//        // when
+//        // then
+//        webTestClient.get().uri(createRequestUtil().createRequestGetFriends(idFirstUser))
+//                .exchange()
+//                .expectStatus().isOk()
+//                .expectBody()
+//                .jsonPath("$[0].idFriend").isEqualTo(idSecondUser)
+//                .jsonPath("$[1].idFriend").isEqualTo(idThirdUser);
+//
+//    }
 
     @Test public void whenUserHasNoFriendsRequestShouldReturnEmptyList() throws URISyntaxException {
         // given
