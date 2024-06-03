@@ -18,15 +18,24 @@ public class FriendServices implements FriendPort {
 
     private final FriendsDatabasePort friendsDatabasePort;
     private final UserServicePort userServicePort;
-
     public FriendServices(FriendsDatabasePort friendsDatabasePort, UserServicePort userServicePort) {
         this.friendsDatabasePort = friendsDatabasePort;
         this.userServicePort = userServicePort;
     }
 
-
+    @Override
+    public Mono<Result<IsFriends>> isFriends(Mono<FriendsIdsData> friendsIdsMono) {
+        return friendsIdsMono
+                .flatMap(friendsIdsData -> friendsDatabasePort.findFriendsByIds(
+                        new Friend(null, friendsIdsData.idFirstFriend(),
+                                friendsIdsData.idSecondFriend())
+                        )
+                        .map(friend -> new IsFriends(true))
+                        .defaultIfEmpty(new IsFriends(false))
+                        .map(Result::success))
+                .onErrorResume(throwable -> Mono.just(Result.error(throwable.getMessage())));
+    }
     private String USER_NOT_FOUND = "User not found";
-
     @Override
     public Mono<Result<Status>> createFriends(Mono<FriendsIdsData> friendsIdsMono) {
 
@@ -64,15 +73,7 @@ public class FriendServices implements FriendPort {
 
     }
 
-    @Override
-    public Mono<Result<IsFriends>> isFriends(Mono<FriendsIdsData> friendsIdsMono) {
-        return friendsIdsMono
-                .flatMap(friendsIdsData -> friendsDatabasePort.findFriendsByIds(new Friend(null, friendsIdsData.idFirstFriend(), friendsIdsData.idSecondFriend()))
-                        .map(friend -> new IsFriends(true))
-                        .defaultIfEmpty(new IsFriends(false))
-                        .map(Result::success))
-                .onErrorResume(throwable -> Mono.just(Result.error(throwable.getMessage())));
-    }
+
 
     @Override
     public Flux<UserData> getFriends(Mono<IdUser> idUserMono) {
