@@ -3,13 +3,11 @@ package com.example.friends_service.adapter.in.user_service;
 import com.example.friends_service.entity.request.IdUserData;
 import com.example.friends_service.entity.request.UserData;
 import com.example.friends_service.entity.response.Result;
-import com.example.friends_service.port.in.UserServicePort;
+import com.example.friends_service.port.out.services.UserServicePort;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 

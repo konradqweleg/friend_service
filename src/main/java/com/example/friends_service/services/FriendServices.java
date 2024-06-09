@@ -7,7 +7,7 @@ import com.example.friends_service.entity.response.Status;
 import com.example.friends_service.model.Friend;
 
 import com.example.friends_service.port.in.FriendPort;
-import com.example.friends_service.port.in.UserServicePort;
+import com.example.friends_service.port.out.services.UserServicePort;
 import com.example.friends_service.port.out.persistence.FriendsDatabasePort;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;

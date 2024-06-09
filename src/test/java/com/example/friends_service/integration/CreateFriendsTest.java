@@ -1,22 +1,16 @@
 package com.example.friends_service.integration;
 
 import com.example.friends_service.entity.request.FriendsIdsData;
-import com.example.friends_service.entity.request.IdUserData;
-import com.example.friends_service.entity.request.UserData;
-import com.example.friends_service.entity.response.Result;
 import com.example.friends_service.integration.mocks.UserServicePortMock;
-import com.example.friends_service.port.in.UserServicePort;
+import com.example.friends_service.port.out.services.UserServicePort;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.web.reactive.function.BodyInserters;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.net.URISyntaxException;
-import java.util.Objects;
 
 import static org.mockito.ArgumentMatchers.any;
 
@@ -30,7 +24,7 @@ public class CreateFriendsTest extends DefaultTestConfiguration {
     @Test
     public void createFriendsForCorrectDataShouldConnectUsersAsFriends() throws URISyntaxException {
         // given
-        userServicePortMock.mockGetUserAboutIdForUserAboutIdOneAndTwo(userServicePort);
+        userServicePortMock.mockGetUserById(userServicePort);
 
         // when
         // then
@@ -62,7 +56,7 @@ public class CreateFriendsTest extends DefaultTestConfiguration {
     @Test
     public void whenConnectAsFriendsAlreadyExistsRequestShouldReturnError() throws URISyntaxException {
         // given
-        userServicePortMock.mockGetUserAboutIdForUserAboutIdOneAndTwo(userServicePort);
+        userServicePortMock.mockGetUserById(userServicePort);
 
         FriendsIdsData friendsIdsData = new FriendsIdsData(idFirstUser, idSecondUser);
         webTestClient.post().uri(createRequestUtil().createRequestCreateFriends())

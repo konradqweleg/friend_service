@@ -1,4 +1,4 @@
-package com.example.friends_service.port.in;
+package com.example.friends_service.port.out.services;
 
 import com.example.friends_service.entity.request.IdUserData;
 import com.example.friends_service.entity.request.UserData;
