@@ -13,8 +13,6 @@ import reactor.core.publisher.Mono;
 public interface FriendPort {
     Mono<Result<Status>> createFriends(Mono<FriendsIdsData> friendsIdsMono);
     Mono<Result<IsFriends>> isFriends(Mono<FriendsIdsData> friendsIdsMono);
-
     Flux<UserData> getFriends(Mono<IdUser> idUserMono);
-
 
 }

@@ -6,5 +6,4 @@ import org.springframework.data.relational.core.mapping.Table;
 
 @Table("friends")
 public record  Friend(@Id Long idFriends,Long idFirstFriend,Long idSecondFriend) {
-
 }

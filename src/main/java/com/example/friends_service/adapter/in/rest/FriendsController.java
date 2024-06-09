@@ -26,7 +26,7 @@ public class FriendsController {
 
     @GetMapping("/isFriends")
     public Mono<ResponseEntity<String>> isFriends(@RequestParam("friendFirstId") @Valid Long idFirstFriend, @RequestParam("friendSecondId") @Valid Long idSecondFriend) {
-        return friendsPort.isFriends(Mono.just(new FriendsIdsData(idFirstFriend,idSecondFriend))).flatMap(ConvertToJSON::convert);
+        return friendsPort.isFriends(Mono.just(new FriendsIdsData(idFirstFriend, idSecondFriend))).flatMap(ConvertToJSON::convert);
     }
 
     @GetMapping("/getFriends")
