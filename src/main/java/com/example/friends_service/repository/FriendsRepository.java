@@ -1,7 +1,7 @@
 package com.example.friends_service.repository;
 
 
-import com.example.friends_service.model.Friend;
+import com.example.friends_service.model.db.Friend;
 
 import org.springframework.data.r2dbc.repository.Query;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;

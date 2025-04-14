@@ -1,94 +1,88 @@
 package com.example.friends_service.services;
 
-import com.example.friends_service.entity.request.*;
-import com.example.friends_service.entity.response.IsFriends;
-import com.example.friends_service.entity.response.Result;
-import com.example.friends_service.entity.response.Status;
-import com.example.friends_service.model.Friend;
+import com.example.friends_service.model.api_models.IdUserDto;
+import com.example.friends_service.model.api_models.IsFriendsDto;
+import com.example.friends_service.exceptions.UserNotFoundException;
 
+import com.example.friends_service.exceptions.UserToCreateRelationNotFoundException;
+import com.example.friends_service.model.api_models.FriendRelationDto;
+import com.example.friends_service.model.api_models.UserDataDto;
 import com.example.friends_service.port.in.FriendPort;
 import com.example.friends_service.port.out.services.UserServicePort;
-import com.example.friends_service.port.out.persistence.FriendsDatabasePort;
+import com.example.friends_service.port.out.persistence.PersistencePort;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
 public class FriendServices implements FriendPort {
-
-    private final FriendsDatabasePort friendsDatabasePort;
+    private final PersistencePort persistencePort;
     private final UserServicePort userServicePort;
-    public FriendServices(FriendsDatabasePort friendsDatabasePort, UserServicePort userServicePort) {
-        this.friendsDatabasePort = friendsDatabasePort;
+    private final Logger logger = LogManager.getLogger(FriendServices.class);
+
+    public FriendServices(PersistencePort persistencePort, UserServicePort userServicePort) {
+        this.persistencePort = persistencePort;
         this.userServicePort = userServicePort;
     }
 
     @Override
-    public Mono<Result<IsFriends>> isFriends(Mono<FriendsIdsData> friendsIdsMono) {
-        return friendsIdsMono
-                .flatMap(friendsIdsData -> friendsDatabasePort.findFriendsByIds(
-                        new Friend(null, friendsIdsData.idFirstFriend(),
-                                friendsIdsData.idSecondFriend())
+    public Mono<IsFriendsDto> isFriends(FriendRelationDto friendsRelationToFind) {
+        return persistencePort.findFriendsRelation(friendsRelationToFind)
+                .map(friend -> new IsFriendsDto(true))
+                .defaultIfEmpty(new IsFriendsDto(false));
+    }
+
+
+    @Override
+    public Mono<Void> createFriends(FriendRelationDto friendRelationToCreate) {
+        IdUserDto idFirstFriend = new IdUserDto(friendRelationToCreate.idFirstFriend());
+        IdUserDto idSecondFriend = new IdUserDto(friendRelationToCreate.idSecondFriend());
+
+        return userServicePort.getUserAboutId(idFirstFriend)
+                .flatMap(userFirst -> userServicePort.getUserAboutId(idSecondFriend)
+                        .flatMap(userSecond -> persistencePort.findFriendsRelation(friendRelationToCreate)
+                                .flatMap(foundFriendData -> Mono.justOrEmpty(foundFriendData)
+                                        .switchIfEmpty(
+                                                persistencePort.createFriend(
+                                                        friendRelationToCreate
+                                                )
+                                        )
+                                        .then())
                         )
-                        .map(friend -> new IsFriends(true))
-                        .defaultIfEmpty(new IsFriends(false))
-                        .map(Result::success))
-                .onErrorResume(throwable -> Mono.just(Result.error(throwable.getMessage())));
-    }
-    private String USER_NOT_FOUND = "User not found";
-    @Override
-    public Mono<Result<Status>> createFriends(Mono<FriendsIdsData> friendsIdsMono) {
-
-        return
-
-                friendsIdsMono.flatMap(friendsIdsData ->
-                        userServicePort.getUserAboutId(Mono.just(new IdUserData(friendsIdsData.idFirstFriend())))
-                                .flatMap(userFirst -> userServicePort.getUserAboutId(Mono.just(new IdUserData(friendsIdsData.idSecondFriend())))
-                                        .flatMap(userSecond -> {
-
-                                            if (userFirst.isSuccess() && userSecond.isSuccess()) {
-                                                return friendsDatabasePort.findFriendsByIds(new Friend(null, friendsIdsData.idFirstFriend(), friendsIdsData.idSecondFriend()))
-                                                        .flatMap(foundFriendData -> {
-                                                            if (foundFriendData != null) {
-                                                                return Mono.just(Result.<Status>error("Friend already exists"));
-                                                            } else {
-
-                                                                return friendsDatabasePort.createFriend(new Friend(null, friendsIdsData.idFirstFriend(), friendsIdsData.idSecondFriend()))
-                                                                        .thenReturn(Result.success(new Status(true)));
-                                                            }
-                                                        })
-                                                        .switchIfEmpty(
-                                                                friendsDatabasePort.createFriend(new Friend(null, friendsIdsData.idFirstFriend(), friendsIdsData.idSecondFriend()))
-                                                                        .thenReturn(Result.success(new Status(true)))
-                                                        )
-                                                        .onErrorResume(throwable -> Mono.just(Result.error(throwable.getMessage())));
-                                            } else {
-                                                return Mono.just(Result.<Status>error(USER_NOT_FOUND));
-                                            }
-                                        })
-                                )
-                                .switchIfEmpty(Mono.just(Result.<Status>error(USER_NOT_FOUND)))
-                );
-
-
-    }
-
-
-
-    @Override
-    public Flux<UserData> getFriends(Mono<IdUser> idUserMono) {
-        return idUserMono
-                .flatMapMany(idUser -> friendsDatabasePort.findFriendsUser(idUser.idUser())
-                        .flatMap(friend -> {
-                            if (friend.idFirstFriend().equals(idUser.idUser())) {
-                                return userServicePort.getUserAboutId(Mono.just(new IdUserData(friend.idSecondFriend())))
-                                        .map(user -> new UserData(friend.idSecondFriend(),user.getValue().name(),user.getValue().surname(),user.getValue().email() ));
-                            } else {
-                                return userServicePort.getUserAboutId(Mono.just(new IdUserData(friend.idFirstFriend())))
-                                        .map(user -> new UserData(friend.idFirstFriend(),user.getValue().name(),user.getValue().surname(),user.getValue().email()));
-                            }
+                        .doOnError(UserNotFoundException.class, e -> {
+                            logger.error("Second user in relation not found: {}", e.getMessage());
+                            throw new UserToCreateRelationNotFoundException("Second user in relation not found");
                         })
-                )
-                .onErrorResume(throwable -> Flux.empty());
+                ).doOnError(UserNotFoundException.class, e -> {
+                    logger.error("First user in relation not found: {}", e.getMessage());
+                    throw new UserToCreateRelationNotFoundException("First user in relation not found");
+                });
+
+
     }
+
+
+    private boolean isTheSameUser(IdUserDto idUserDtoToFindFriends, Long idFriend) {
+        return idUserDtoToFindFriends.idUser().equals(idFriend);
+    }
+
+    @Override
+    public Flux<UserDataDto> getFriends(IdUserDto idUserDtoToFindFriends) {
+        return userServicePort.getUserAboutId(idUserDtoToFindFriends)
+                .thenMany(persistencePort.findUserFriends(idUserDtoToFindFriends))
+                .flatMap(friendRelation -> {
+                    IdUserDto friendId;
+                    if (isTheSameUser(idUserDtoToFindFriends, friendRelation.idFirstFriend())) {
+                        friendId = new IdUserDto(friendRelation.idSecondFriend());
+                    } else {
+                        friendId = new IdUserDto(friendRelation.idFirstFriend());
+                    }
+
+                    return userServicePort.getUserAboutId(friendId)
+                            .map(user -> new UserDataDto(friendId.idUser(), user.name(), user.surname(), user.email()));
+                });
+    }
+
 }

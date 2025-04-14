@@ -1,4 +1,4 @@
-package com.example.friends_service.model;
+package com.example.friends_service.model.db;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Embedded;
