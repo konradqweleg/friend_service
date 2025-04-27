@@ -34,5 +34,13 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+bootJar {
+    archiveFileName = 'mychat-friends-service.jar'
+}
+
+tasks.jar {
+    enabled = false
+}
+
 
 

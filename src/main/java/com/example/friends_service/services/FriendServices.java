@@ -1,5 +1,6 @@
 package com.example.friends_service.services;
 
+import com.example.friends_service.exceptions.FriendRelationAlreadyExists;
 import com.example.friends_service.model.api_models.IdUserDto;
 import com.example.friends_service.model.api_models.IsFriendsDto;
 import com.example.friends_service.exceptions.UserNotFoundException;
@@ -43,24 +44,28 @@ public class FriendServices implements FriendPort {
         return userServicePort.getUserAboutId(idFirstFriend)
                 .flatMap(userFirst -> userServicePort.getUserAboutId(idSecondFriend)
                         .flatMap(userSecond -> persistencePort.findFriendsRelation(friendRelationToCreate)
-                                .flatMap(foundFriendData -> Mono.justOrEmpty(foundFriendData)
-                                        .switchIfEmpty(
-                                                persistencePort.createFriend(
-                                                        friendRelationToCreate
-                                                )
-                                        )
-                                        .then())
+                                .flatMap(existingRelation -> {
+                                    logger.error("Friend relation already exists: {} and {}", idFirstFriend.idUser(), idSecondFriend.idUser());
+                                    return Mono.error(new FriendRelationAlreadyExists("Friend relation already exists"));
+                                })
+                                .switchIfEmpty(
+                                        Mono.defer(() -> {
+                                            logger.info("Creating new friend relation: {} and {}", idFirstFriend.idUser(), idSecondFriend.idUser());
+                                            return persistencePort.createFriend(friendRelationToCreate).then();
+                                        })
+                                )
+
                         )
-                        .doOnError(UserNotFoundException.class, e -> {
+                        .onErrorMap(UserNotFoundException.class, e -> {
                             logger.error("Second user in relation not found: {}", e.getMessage());
-                            throw new UserToCreateRelationNotFoundException("Second user in relation not found");
+                            return new UserToCreateRelationNotFoundException("Second user in relation not found");
                         })
-                ).doOnError(UserNotFoundException.class, e -> {
+                )
+                .onErrorMap(UserNotFoundException.class, e -> {
                     logger.error("First user in relation not found: {}", e.getMessage());
-                    throw new UserToCreateRelationNotFoundException("First user in relation not found");
-                });
-
-
+                    return new UserToCreateRelationNotFoundException("First user in relation not found");
+                })
+                .then();
     }
 
 
