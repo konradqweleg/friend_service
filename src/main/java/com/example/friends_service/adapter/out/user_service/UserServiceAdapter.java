@@ -1,11 +1,8 @@
 package com.example.friends_service.adapter.out.user_service;
 
+import com.example.friends_service.exceptions.*;
 import com.example.friends_service.model.api_models.IdUserDto;
 import com.example.friends_service.model.api_models.UserDataDto;
-import com.example.friends_service.exceptions.FriendServiceParsingException;
-import com.example.friends_service.exceptions.GeneralFriendServiceException;
-import com.example.friends_service.exceptions.UnexpectedFriendServiceException;
-import com.example.friends_service.exceptions.UserNotFoundException;
 import com.example.friends_service.port.out.services.UserServicePort;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,7 +46,7 @@ public class UserServiceAdapter implements UserServicePort {
                                 return Mono.error(new UserNotFoundException("User not found with ID: " + idUserDtoData.idUser()));
                             } else {
                                 return response.bodyToMono(String.class)
-                                        .flatMap(body -> Mono.error(new GeneralFriendServiceException("Error from user service: " + body)));
+                                        .flatMap(body -> Mono.error(new UserServiceUnexpectedException("Error from user service: " + body)));
                             }
                         }
                 )
@@ -60,15 +57,13 @@ public class UserServiceAdapter implements UserServicePort {
                         return Mono.just(userDataDto);
                     } catch (JsonProcessingException e) {
                         logger.error("Error parsing response from user service: {}", e.getMessage());
-                        return Mono.error(new FriendServiceParsingException("Error parsing JSON response"));
+                        return Mono.error(new UserServiceUnexpectedException("Error parsing JSON response"));
                     }
                 })
-                .doOnTerminate(() -> logger.info("Request completed"))
                 .onErrorResume(e -> {
                     logger.error("Error occurred: {}", e.getMessage());
-                    return Mono.error(new UnexpectedFriendServiceException("Unexpected error"));
-                })
-                .doOnNext(userData -> logger.info("User data retrieved: {}", userData));
+                    return Mono.error(new UserServiceUnexpectedException("Unexpected error"));
+                });
     }
 
 }

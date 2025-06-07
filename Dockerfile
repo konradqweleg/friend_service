@@ -15,8 +15,8 @@ FROM openjdk:17-jdk-slim AS runtime
 
 WORKDIR /app
 
-COPY --from=build /app/build/libs/mychat-friends-service.jar mychat-friends-service.jar
+COPY --from=build /app/build/libs/friend-service.jar friend-service.jar
 
 EXPOSE 8082
 
-ENTRYPOINT ["java", "-jar", "mychat-friends-service.jar"]
+ENTRYPOINT ["java", "-jar", "friend-service.jar"]

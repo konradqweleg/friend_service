@@ -35,7 +35,7 @@ tasks.named('test') {
 }
 
 bootJar {
-    archiveFileName = 'mychat-friends-service.jar'
+    archiveFileName = 'friend-service.jar'
 }
 
 tasks.jar {
