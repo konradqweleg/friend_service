@@ -11,4 +11,3 @@ public class FriendsServiceApplication {
     }
 
 }
-//gradlew clean build
